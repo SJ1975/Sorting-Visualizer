@@ -3,16 +3,16 @@ package com.example.Sorting.model;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import java.util.List;
+
+import java.util.Date;
 
 @Data
-@Document(collection = "sortingHistory")
+@Document(collection = "sorting_history")
 public class SortingHistory {
     @Id
     private String id;
     private String userId;
     private String algorithm;
-    private List<Integer> inputArray;
-    private List<Integer> sortedArray;
-    private long executionTime;
+    private int[] sortedArray;
+    private Date timestamp;
 }
