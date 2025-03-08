@@ -5,7 +5,7 @@ const SortingVisualizer = () => {
   const [sorting, setSorting] = useState(false);
   const [speed, setSpeed] = useState(100);
   const [arraySize, setArraySize] = useState(20);
-  const [algorithm, setAlgorithm] = useState("bubble");
+  const [algorithm, setAlgorithm] = useState("Bubble");
   const backendURL = "http://localhost:8080"; // Backend URL
 
   useEffect(() => {
@@ -24,37 +24,62 @@ const SortingVisualizer = () => {
     if (sorting) return;
     setSorting(true);
 
+    const originalArray = [...array]; // Store original array before sorting
+    const startTime = performance.now(); // Track sorting start time
+
     try {
-      const response = await fetch(`http://localhost:8080/api/sorting/${algorithm}`, {
+      const response = await fetch(`${backendURL}/api/sorting/{algorithm}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ array }),
+        body: JSON.stringify({ array: array, algorithm: algorithm }) // ✅ Corrected request format
       });
 
       if (!response.ok) {
-        throw new Error("Failed to sort array");
+        throw new Error(`Failed to sort array: ${response.statusText}`);
       }
 
-      const sortedArray = await response.json();
-      setArray(sortedArray);
+      const data = await response.json();
+      const sortedArray = data.sortedArray; // ✅ Extract sorted array from response
+      setArray(sortedArray); // ✅ Update frontend with sorted array
 
-     // Save sorting history in MongoDB
-    await fetch("http://localhost:8080/api/history/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: "user123", // Replace with actual logged-in user ID when authentication is added
-        algorithm: algorithm,
-        sortedArray: sortedArray,
-      }),
-    });
+      const endTime = performance.now();
+      const timeTaken = Math.round(endTime - startTime);
 
-      console.log("Sorting history saved!");
+      console.log("Sorting successful:", sortedArray);
+
+      // Save sorting history in MongoDB
+      await saveSortingHistory(originalArray, sortedArray, timeTaken);
     } catch (error) {
       console.error("Sorting error:", error);
     }
 
     setSorting(false);
+  };
+
+  // Save Sorting History to Backend
+  const saveSortingHistory = async (originalArray, sortedArray, timeTaken) => {
+    try {
+      const response = await fetch(`${backendURL}/api/history/save`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: "user123", // Replace with actual user ID (when authentication is added)
+          algorithm: algorithm,
+          originalArray: originalArray,
+          sortedArray: sortedArray,
+          timeTaken: timeTaken,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save sorting history");
+      }
+
+      console.log("Sorting history saved successfully!");
+    } catch (error) {
+      console.error("Error saving sorting history:", error);
+    }
   };
 
   return (
@@ -74,11 +99,11 @@ const SortingVisualizer = () => {
           className="bg-gray-200 px-4 py-2 rounded"
           disabled={sorting}
         >
-          <option value="bubble">Bubble Sort</option>
-          <option value="selection">Selection Sort</option>
-          <option value="insertion">Insertion Sort</option>
-          <option value="merge">Merge Sort</option>
-          <option value="quick">Quick Sort</option>
+          <option value="Bubble">Bubble Sort</option>
+          <option value="Selection">Selection Sort</option>
+          <option value="Insertion">Insertion Sort</option>
+          <option value="Merge">Merge Sort</option>
+          <option value="Quick">Quick Sort</option>
         </select>
 
         <button onClick={handleSort} disabled={sorting} className="bg-green-500 text-white px-4 py-2 rounded">

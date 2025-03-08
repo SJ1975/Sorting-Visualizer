@@ -1,40 +1,41 @@
 package com.example.Sorting.controller;
 
-
-import com.example.Sorting.model.SortingHistory;
-import com.example.Sorting.model.SortingRequest;
-import com.example.Sorting.repository.SortingHistoryRepository;
 import com.example.Sorting.service.SortingService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/sorting")
-@CrossOrigin(origins = "http://localhost:3000") //Allow frontend access
+@CrossOrigin("*")
 public class SortingController {
-    private final SortingService sortingService;
 
-    public SortingController(SortingService sortingService) {
-        this.sortingService = sortingService;
-    }
+    @Autowired
+    private SortingService sortingService;
 
+    // ✅ Sort an array using the selected algorithm
     @PostMapping("/{algorithm}")
-    public int[] sort(@PathVariable String algorithm, @RequestBody SortingRequest request) {
-        switch (algorithm) {
-            case "bubble":
-                return sortingService.bubbleSort(request.getArray());
-            case "selection":
-                return sortingService.selectionSort(request.getArray());
-            case "insertion":
-                return sortingService.insertionSort(request.getArray());
-            case "merge":
-                return sortingService.mergeSort(request.getArray());
-            case "quick":
-                return sortingService.quickSort(request.getArray());
-            default:
-                throw new IllegalArgumentException("Invalid sorting algorithm");
-        }
+    public Map<String, Object> sortArray(@RequestBody Map<String, Object> request) {
+        String algorithm = (String) request.get("algorithm");
+        List<Integer> originalArray = (List<Integer>) request.get("array");
+
+        long startTime = System.nanoTime();
+        List<Integer> sortedArray = sortingService.sortArray(algorithm, originalArray);
+        long endTime = System.nanoTime();
+        long timeTaken = (endTime - startTime) / 1_000_000; // Convert to milliseconds
+
+        // ✅ Prepare response
+        Map<String, Object> response = new HashMap<>();
+        response.put("algorithm", algorithm);
+        response.put("originalArray", originalArray);
+        response.put("sortedArray", sortedArray);
+        response.put("timeTaken", timeTaken + " ms");
+
+        return response;
     }
+
+
 }

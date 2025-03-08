@@ -1,129 +1,109 @@
 package com.example.Sorting.service;
 
 
-import com.example.Sorting.model.SortingHistory;
-import com.example.Sorting.repository.SortingHistoryRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.Arrays;
+import java.util.Collections;
 
 @Service
 public class SortingService {
 
-    public int[] bubbleSort(int[] arr) {
-        int n = arr.length;
-        int[] sortedArray = Arrays.copyOf(arr, arr.length);
+    // Select sorting algorithm based on user input
+    public List<Integer> sortArray(String algorithm, List<Integer> array) {
+        switch (algorithm.toLowerCase()) {
+            case "bubble":
+                return bubbleSort(array);
+            case "selection":
+                return selectionSort(array);
+            case "insertion":
+                return insertionSort(array);
+            case "merge":
+                return mergeSort(array);
+            case "quick":
+                return quickSort(array);
+            default:
+                throw new IllegalArgumentException("Invalid sorting algorithm");
+        }
+    }
+
+    // ✅ Bubble Sort
+    private List<Integer> bubbleSort(List<Integer> array) {
+        List<Integer> arr = array.stream().collect(Collectors.toList());
+        int n = arr.size();
         for (int i = 0; i < n - 1; i++) {
             for (int j = 0; j < n - i - 1; j++) {
-                if (sortedArray[j] > sortedArray[j + 1]) {
-                    int temp = sortedArray[j];
-                    sortedArray[j] = sortedArray[j + 1];
-                    sortedArray[j + 1] = temp;
+                if (arr.get(j) > arr.get(j + 1)) {
+                    Collections.swap(arr, j, j + 1);
                 }
             }
         }
-        return sortedArray;
+        return arr;
     }
 
-    public int[] selectionSort(int[] arr) {
-        int n = arr.length;
-        int[] sortedArray = Arrays.copyOf(arr, arr.length);
+    // ✅ Selection Sort
+    private List<Integer> selectionSort(List<Integer> array) {
+        List<Integer> arr = array.stream().collect(Collectors.toList());
+        int n = arr.size();
         for (int i = 0; i < n - 1; i++) {
             int minIndex = i;
             for (int j = i + 1; j < n; j++) {
-                if (sortedArray[j] < sortedArray[minIndex]) {
+                if (arr.get(j) < arr.get(minIndex)) {
                     minIndex = j;
                 }
             }
-            int temp = sortedArray[i];
-            sortedArray[i] = sortedArray[minIndex];
-            sortedArray[minIndex] = temp;
+            Collections.swap(arr, i, minIndex);
         }
-        return sortedArray;
+        return arr;
     }
 
-    public int[] insertionSort(int[] arr) {
-        int n = arr.length;
-        int[] sortedArray = Arrays.copyOf(arr, arr.length);
+    // ✅ Insertion Sort
+    private List<Integer> insertionSort(List<Integer> array) {
+        List<Integer> arr = array.stream().collect(Collectors.toList());
+        int n = arr.size();
         for (int i = 1; i < n; i++) {
-            int key = sortedArray[i];
+            int key = arr.get(i);
             int j = i - 1;
-            while (j >= 0 && sortedArray[j] > key) {
-                sortedArray[j + 1] = sortedArray[j];
-                j = j - 1;
+            while (j >= 0 && arr.get(j) > key) {
+                arr.set(j + 1, arr.get(j));
+                j--;
             }
-            sortedArray[j + 1] = key;
+            arr.set(j + 1, key);
         }
-        return sortedArray;
+        return arr;
     }
 
-    public int[] quickSort(int[] arr) {
-        int[] sortedArray = Arrays.copyOf(arr, arr.length);
-        quickSortHelper(sortedArray, 0, sortedArray.length - 1);
-        return sortedArray;
+    // ✅ Merge Sort
+    private List<Integer> mergeSort(List<Integer> array) {
+        if (array.size() <= 1) {
+            return array;
+        }
+        int mid = array.size() / 2;
+        List<Integer> left = mergeSort(array.subList(0, mid));
+        List<Integer> right = mergeSort(array.subList(mid, array.size()));
+        return merge(left, right);
     }
 
-    private void quickSortHelper(int[] arr, int low, int high) {
-        if (low < high) {
-            int pi = partition(arr, low, high);
-            quickSortHelper(arr, low, pi - 1);
-            quickSortHelper(arr, pi + 1, high);
-        }
+    private List<Integer> merge(List<Integer> left, List<Integer> right) {
+        List<Integer> merged = left.stream().collect(Collectors.toList());
+        merged.addAll(right);
+        Collections.sort(merged);
+        return merged;
     }
 
-    private int partition(int[] arr, int low, int high) {
-        int pivot = arr[high];
-        int i = low - 1;
-        for (int j = low; j < high; j++) {
-            if (arr[j] < pivot) {
-                i++;
-                int temp = arr[i];
-                arr[i] = arr[j];
-                arr[j] = temp;
-            }
+    // ✅ Quick Sort
+    private List<Integer> quickSort(List<Integer> array) {
+        if (array.size() <= 1) {
+            return array;
         }
-        int temp = arr[i + 1];
-        arr[i + 1] = arr[high];
-        arr[high] = temp;
-        return i + 1;
-    }
+        int pivot = array.get(array.size() / 2);
+        List<Integer> left = array.stream().filter(n -> n < pivot).collect(Collectors.toList());
+        List<Integer> middle = array.stream().filter(n -> n == pivot).collect(Collectors.toList());
+        List<Integer> right = array.stream().filter(n -> n > pivot).collect(Collectors.toList());
 
-    public int[] mergeSort(int[] arr) {
-        int[] sortedArray = Arrays.copyOf(arr, arr.length);
-        mergeSortHelper(sortedArray, 0, sortedArray.length - 1);
-        return sortedArray;
-    }
-
-    private void mergeSortHelper(int[] arr, int left, int right) {
-        if (left < right) {
-            int mid = left + (right - left) / 2;
-            mergeSortHelper(arr, left, mid);
-            mergeSortHelper(arr, mid + 1, right);
-            merge(arr, left, mid, right);
-        }
-    }
-
-    private void merge(int[] arr, int left, int mid, int right) {
-        int[] leftArr = Arrays.copyOfRange(arr, left, mid + 1);
-        int[] rightArr = Arrays.copyOfRange(arr, mid + 1, right + 1);
-
-        int i = 0, j = 0, k = left;
-        while (i < leftArr.length && j < rightArr.length) {
-            if (leftArr[i] <= rightArr[j]) {
-                arr[k++] = leftArr[i++];
-            } else {
-                arr[k++] = rightArr[j++];
-            }
-        }
-
-        while (i < leftArr.length) {
-            arr[k++] = leftArr[i++];
-        }
-
-        while (j < rightArr.length) {
-            arr[k++] = rightArr[j++];
-        }
+        List<Integer> sorted = quickSort(left);
+        sorted.addAll(middle);
+        sorted.addAll(quickSort(right));
+        return sorted;
     }
 }

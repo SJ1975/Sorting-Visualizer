@@ -2,34 +2,61 @@ package com.example.Sorting.controller;
 
 import com.example.Sorting.model.SortingHistory;
 import com.example.Sorting.repository.SortingHistoryRepository;
+import com.example.Sorting.service.SortingService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/history")
-//@CrossOrigin("*")
+@CrossOrigin("*")
 public class SortingHistoryController {
 
-    private final SortingHistoryRepository historyRepository;
+    @Autowired
+    private SortingHistoryRepository historyRepository;
 
-    public SortingHistoryController(SortingHistoryRepository historyRepository) {
-        this.historyRepository = historyRepository;
-    }
+    @Autowired
+    private SortingService sortingService;
 
-    // ✅ Save sorting history
+    // ✅ Save sorting history (Auto Sort & Store)
     @PostMapping("/save")
-    public SortingHistory saveSortingHistory(@RequestBody SortingHistory history) {
-        history.setTimestamp(new Date());  // Set timestamp
-        SortingHistory savedHistory = historyRepository.save(history);
-        System.out.println("✅ Sorting history saved: " + savedHistory); // ✅ Log data
-        return savedHistory;
+    public ResponseEntity<SortingHistory> saveSortingHistory(@RequestBody SortingHistory request) {
+        long startTime = System.nanoTime(); // Track time
+
+        // Apply sorting based on algorithm type
+        List<Integer> sortedArray = sortingService.sortArray(request.getAlgorithm(), request.getOriginalArray());
+
+        long endTime = System.nanoTime();
+        long timeTaken = (endTime - startTime) / 1_000_000; // Convert to milliseconds
+
+        // Save sorting result
+        SortingHistory sortingHistory = new SortingHistory();
+        sortingHistory.setAlgorithm(request.getAlgorithm());
+        sortingHistory.setOriginalArray(request.getOriginalArray());
+        sortingHistory.setSortedArray(sortedArray);
+        sortingHistory.setTimeTaken(timeTaken);
+        sortingHistory.setTimestamp(Instant.now().toString());
+
+        // ✅ Make sure sortingHistoryRepository is properly injected
+        SortingHistory savedHistory = historyRepository.save(sortingHistory);
+
+        return ResponseEntity.ok(savedHistory);
     }
-    // ✅ Get sorting history for a user
-    @GetMapping("/{userId}")
-    public List<SortingHistory> getHistoryByUser(@PathVariable String userId) {
-        return historyRepository.findByUserId(userId);
+
+    // ✅ Fetch all sorting history
+    @GetMapping("/all")
+    public List<SortingHistory> getAllSortingHistory() {
+        return historyRepository.findAll();
     }
+
+    // ✅ Fetch sorting history based on algorithm type
+    @GetMapping("/history/{algorithm}")
+    public List<SortingHistory> getHistoryByAlgorithm(@PathVariable String algorithm) {
+        return historyRepository.findByAlgorithm(algorithm);
+    }
+
 }
 
